@@ -3,11 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Retro Games Dashboard</title>
+  <title>Sharkdude's Arcade</title>
   <style>
     @import url('https://googleapis.com');
 
-    /* RETRO ARCADE PITCH BLACK OVERRIDE - Destroys white background caching issues */
+    /* RETRO ARCADE PITCH BLACK OVERRIDE */
     html, body {
       background-color: #05000a !important;
       background-image: 
@@ -18,13 +18,46 @@
       padding: 0 !important;
       font-family: 'Press Start 2P', 'Courier Prime', monospace !important;
       display: flex !important;
-      justify-content: center !important;
+      flex-direction: column !important;
       align-items: center !important;
+      justify-content: flex-start !important;
       min-height: 100vh !important;
       color: #39ff14 !important;
+      box-sizing: border-box !important;
     }
 
-    /* CABINET GRID ARCHITECTURE - Locked to exactly two per row on all screen sizes */
+    /* NEON CYAN HEADER MARQUEE SIGN */
+    .arcade-header {
+      margin: 40px 0 20px 0 !important;
+      text-align: center !important;
+    }
+    
+    .arcade-title {
+      font-size: 24px !important;
+      font-weight: bold !important;
+      color: #00ffff !important;
+      text-transform: uppercase !important;
+      letter-spacing: -1px !important;
+      text-shadow: 
+        0 0 5px #00ffff,
+        0 0 10px #00ffff,
+        0 0 20px #00ffff,
+        0 0 40px #006666 !important;
+      animation: neonFlicker 4s infinite alternate !important;
+    }
+
+    @keyframes neonFlicker {
+      0%, 19%, 21%, 23%, 25%, 54%, 56%, 100% {
+        text-shadow: 0 0 5px #00ffff, 0 0 10px #00ffff, 0 0 20px #00ffff, 0 0 40px #006666;
+        opacity: 1;
+      }
+      20%, 24%, 55% {
+        text-shadow: none;
+        opacity: 0.7;
+      }
+    }
+
+    /* CABINET GRID ARCHITECTURE - 2 per row across all viewports */
     .dashboard-grid {
       display: grid !important;
       grid-template-columns: repeat(2, 1fr) !important;
@@ -33,6 +66,7 @@
       max-width: 640px !important;
       padding: 20px !important;
       box-sizing: border-box !important;
+      margin-bottom: 40px !important;
     }
 
     /* ROUNDED RECTANGLE INTERACTIVE GAME TILES */
@@ -53,7 +87,7 @@
       transition: transform 0.1s steps(3), box-shadow 0.1s steps(3) !important;
     }
 
-    /* VIBRANT SYNTHWAVE FRAME NEONS */
+    /* SYNTHWAVE FRAME NEONS */
     .game-card:nth-child(1) { 
       background-color: #12001a !important; background-image: linear-gradient(135deg, #4d0000, #12001a), url('adventure.png') !important;
       border: 3px solid #ff003c !important; box-shadow: 0 0 10px #ff003c !important; 
@@ -138,9 +172,9 @@
       text-shadow: none !important;
     }
 
-    /* Coin Intake Rounded Rectangle Identifier Slot */
+    /* BLINKING COMING SOON ROUNDED RECTANGLE SLOTS */
     .placeholder-card {
-      border: 3px dashed #ff007f !important;
+      border: 3px dashed #440033 !important;
       border-radius: 16px !important;
       aspect-ratio: 3/2 !important;
       display: flex !important;
@@ -152,16 +186,17 @@
       text-transform: uppercase !important;
       background-color: #0d0014 !important;
       text-shadow: 0 0 5px #ff007f !important;
-      box-shadow: inset 0 0 10px rgba(255, 0, 127, 0.2) !important;
-      animation: coinBlink 2s infinite steps(2) !important;
+      box-shadow: inset 0 0 10px rgba(255, 0, 127, 0.05) !important;
+      animation: coinBlink 3s infinite steps(2) !important;
     }
 
     @keyframes coinBlink {
-      0% { opacity: 1; }
-      50% { opacity: 0.3; }
+      0% { opacity: 1; border-color: #440033; }
+      50% { opacity: 0.5; border-color: #ff007f; }
     }
 
     @media (max-width: 500px) {
+      .arcade-title { font-size: 16px !important; }
       .dashboard-grid { gap: 12px !important; padding: 10px !important; }
       .game-title { font-size: 9px !important; }
       .game-btn { font-size: 7px !important; padding: 4px 8px !important; }
@@ -170,6 +205,12 @@
 </head>
 <body>
 
+  <!-- Neon Cyan Header -->
+  <header class="arcade-header">
+    <h1 class="arcade-title">Sharkdude’s Arcade</h1>
+  </header>
+
+  <!-- Complete 20-Card Grid Blueprint -->
   <div class="dashboard-grid">
 
     <!-- 1. Adventure Card Element -->
@@ -212,10 +253,22 @@
       </div>
     </a>
 
-    <!-- 6. Placeholder Coin Return Layout Card Slot -->
-    <div class="placeholder-card">
-      Insert Coin
-    </div>
+    <!-- 6 to 20. Placeholder coming soon cards -->
+    <div class="placeholder-card">Coming Soon</div>
+    <div class="placeholder-card">Coming Soon</div>
+    <div class="placeholder-card">Coming Soon</div>
+    <div class="placeholder-card">Coming Soon</div>
+    <div class="placeholder-card">Coming Soon</div>
+    <div class="placeholder-card">Coming Soon</div>
+    <div class="placeholder-card">Coming Soon</div>
+    <div class="placeholder-card">Coming Soon</div>
+    <div class="placeholder-card">Coming Soon</div>
+    <div class="placeholder-card">Coming Soon</div>
+    <div class="placeholder-card">Coming Soon</div>
+    <div class="placeholder-card">Coming Soon</div>
+    <div class="placeholder-card">Coming Soon</div>
+    <div class="placeholder-card">Coming Soon</div>
+    <div class="placeholder-card">Coming Soon</div>
 
   </div>
 
