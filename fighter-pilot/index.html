@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>RETRO FIGHTER PILOT</title>
+    <style>
+        @import url('https://googleapis.com');
+        body {
+            margin:0; padding:0; background:#050510; color:#fff; font-family:'Press Start 2P', monospace;
+            display:flex; flex-direction:column; align-items:center; justify-content:center;
+            min-height:100vh; overflow:hidden; position:fixed; width:100%; height:100%;
+        }
+        #game-container { position:relative; box-shadow:0 0 30px #ff0055; border:4px solid #3d0c5a; border-radius:20px; overflow:hidden; }
+        canvas { display:block; background:linear-gradient(to bottom, #000011 0%, #050525 100%); }
+        .ui-overlay {
+            position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none;
+            display:flex; flex-direction:column; justify-content:center; align-items:center; text-align:center; white-space:pre-line;
+        }
+        #start-screen { background:rgba(5,5,20,0.85); pointer-events:auto; }
+        h1 { color:#00ffff; font-size:18px; margin-bottom:10px; text-shadow:3px 3px #ff0055; }
+        .subtitle { color:#ff0055; font-size:9px; margin-bottom:20px; }
+        #leaderboard-container { color:#ffff00; font-size:8px; line-height:1.8; margin-bottom:20px; width:80%; text-align:left; }
+        .lb-row { display:flex; justify-content:space-between; margin-bottom:4px; }
+        #reset-btn {
+            background:#ff0055; color:#fff; border:2px solid #3d0c5a; padding:6px 10px;
+            font-family:'Press Start 2P', monospace; font-size:7px; margin-bottom:25px; border-radius:5px; cursor:pointer;
+        }
+        .blink { animation:blinker 1s linear infinite; color:#00ff00; font-size:10px; font-weight:bold; }
+        @keyframes blinker { 50% { opacity:0; } }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <canvas id="gameCanvas" width="360" height="640"></canvas>
+        <div id="start-screen" class="ui-overlay">
+            <h1>RETRO FIGHTER PILOT</h1>
+            <div class="subtitle">TACTICAL AIR COMBAT</div>
+            <div id="leaderboard-container"></div>
+            <button id="reset-btn">RESET LEADERBOARD</button>
+            <div class="blink">TAP TO START</div>
+        </div>
+    </div>
+<script>
+    const canvas = document.getElementById('gameCanvas'), ctx = canvas.getContext('2d');
+    const startScreen = document.getElementById('start-screen'), resetBtn = document.getElementById('reset-btn'), lbContainer = document.getElementById('leaderboard-container');
+    let gameRunning = false, isEnteringInitials = false, startTime = 0, elapsedTime = 0, finalTimeDisplay = "00:00:00", lives = 3;
+    let stars = [], bullets = [], enemyBullets = [], enemies = [], particles = [], powerups = [], gridOffset = 0; const gridSpeed = 4;
+    const player = { x: 180, y: 400, width: 34, height: 30, speed: 6, cooldown: 0, maxCooldown: 10, hasShield: false, isRolling: false, rollFrame: 0, rollDuration: 30 };
+    const joystick = { baseX: 180, baseY: 550, baseRadius: 45, stickX: 180, stickY: 550, stickRadius: 20, active: false, touchId: null, dirX: 0, dirY: 0 };
+    
+    // Leaderboard Array Configuration (Top 3 tracking setup)
+    let leaderboard = JSON.parse(localStorage.getItem('pilot_leaderboard')) || [
+        { name: "AAA", time: 30000 }, { name: "BBB", time: 20000 }, { name: "CCC", time: 10000 }
+    ];
+    let userInitials = "";
+    
+    // Custom Neon Virtual Keyboard Mapping Mapped dynamically for touch math boundaries
+    const keysRow1 = ["Q","W","E","R","T","Y","U","I","O","P"];
+    const keysRow2 = ["A","S","D","F","G","H","J","K","L"];
+    const keysRow3 = ["Z","X","C","V","B","N","M", "⌫"];
+    let keyboardButtons = [];
+
+    function buildKeyboard() {
+        keyboardButtons = [];
+        const startY = 440, kw = 28, kh = 32, gap = 5;
+        
+        let row1X = (360 - (keysRow1.length * kw + (keysRow1.length - 1) * gap)) / 2;
+        keysRow1.forEach((k, i) => { keyboardButtons.push({ char: k, x: row1X + i * (kw + gap), y: startY, w: kw, h: kh, isDel: false }); });
+        
+        let row2X = (360 - (keysRow2.length * kw + (keysRow2.length - 1) * gap)) / 2;
+        keysRow2.forEach((k, i) => { keyboardButtons.push({ char: k, x: row2X + i * (kw + gap), y: startY + kh + gap, w: kw, h: kh, isDel: false }); });
+        
+        let row3X = (360 - ((keysRow3.length - 1) * kw + 40 + (keysRow3.length - 1) * gap)) / 2;
+        keysRow3.forEach((k, i) => {
+            let isDelete = k === "⌫";
+            let width = isDelete ? 40 : kw;
+            keyboardButtons.push({ char: k, x: row3X, y: startY + 2 * (kh + gap), w: width, h: kh, isDel: isDelete });
+            row3X += width + gap;
+        });
+    }
+    buildKeyboard();
+
+    function updateLeaderboardUI() {
+        lbContainer.innerHTML = '<div style="text-align:center;color:#00ffff;margin-bottom:6px;">= TOP PILOTS =</div>';
+        leaderboard.slice(0, 3).forEach((entry, idx) => {
+            lbContainer.innerHTML += `<div class="lb-row"><div>${idx+1}. ${entry.name}</div><div>${formatTime(entry.time)}</div></div>`;
+        });
+    }
+    updateLeaderboardUI();
+
+    function resetScores(e) {
+        e.stopPropagation(); e.preventDefault();
+        leaderboard = [{ name: "AAA", time: 30000 }, { name: "BBB", time: 20000 }, { name: "CCC", time: 10000 }];
+        localStorage.setItem('pilot_leaderboard', JSON.stringify(leaderboard));
+        updateLeaderboardUI();
+    }
+    resetBtn.addEventListener('touchstart', resetScores); resetBtn.addEventListener('click', resetScores);
+    startScreen.addEventListener('touchstart', function(e) { e.preventDefault(); if (!gameRunning && !isEnteringInitials) startGame(); });
+
+    canvas.addEventListener('touchstart', function(e) {
+        e.preventDefault(); 
+        const rect = canvas.getBoundingClientRect();
+        const t = e.changedTouches[0], tx = t.clientX - rect.left, ty = t.clientY - rect.top;
+
+        if (isEnteringInitials) {
+            keyboardButtons.forEach(btn => {
+                if (tx >= btn.x && tx <= btn.x + btn.w && ty >= btn.y && ty <= btn.y + btn.h) {
+                    if (btn.isDel) {
+                        if (userInitials.length > 0) userInitials = userInitials.slice(0, -1);
+                    } else {
+                        if (userInitials.length < 3) userInitials += btn.char;
+                        if (userInitials.length === 3) {
+                            setTimeout(() => { saveInitialsAndShowMenu(); }, 400);
+                        }
+                    }
+                }
+            });
+            return;
+        }
+
+        if (!gameRunning) return;
+        if (ty > 460) {
+            if (Math.sqrt((tx - joystick.stickX) ** 2 + (ty - joystick.stickY) ** 2) <= joystick.stickRadius && !player.isRolling) { player.isRolling = true; player.rollFrame = 0; }
+            joystick.active = true; joystick.touchId = t.identifier; updateJoystick(tx, ty);
+        }
+    });
+    canvas.addEventListener('touchmove', function(e) {
+        e.preventDefault(); if (!gameRunning || !joystick.active || isEnteringInitials) return; const rect = canvas.getBoundingClientRect();
+        for (let i = 0; i < e.touches.length; i++) {
+            const t = e.touches[i]; if (t.identifier === joystick.touchId) { updateJoystick(t.clientX - rect.left, t.clientY - rect.top); break; }
+        }
+    });
+
+    function endTouch(e) {
+        e.preventDefault(); if (isEnteringInitials) return;
+        for (let i = 0; i < e.changedTouches.length; i++) {
+            if (e.changedTouches[i].identifier === joystick.touchId) {
+                joystick.active = false; joystick.touchId = null; joystick.stickX = joystick.baseX; joystick.stickY = joystick.baseY; joystick.dirX = 0; joystick.dirY = 0; break;
+            }
+        }
+    }
+    canvas.addEventListener('touchend', endTouch); canvas.addEventListener('touchcancel', endTouch);
+
+    function updateJoystick(tx, ty) {
+        const dx = tx - joystick.baseX, dy = ty - joystick.baseY, dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < joystick.baseRadius) { joystick.stickX = tx; joystick.stickY = ty; } 
+        else { joystick.stickX = joystick.baseX + (dx / dist) * joystick.baseRadius; joystick.stickY = joystick.baseY + (dy / dist) * joystick.baseRadius; }
+        joystick.dirX = (joystick.stickX - joystick.baseX) / joystick.baseRadius; joystick.dirY = (joystick.stickY - joystick.baseY) / joystick.baseRadius;
+    }
+
+    for (let i = 0; i < 30; i++) stars.push({ x: Math.random() * 360, y: Math.random() * 640, size: Math.random() * 2 + 1, speed: Math.random() * 3 + 1 });
+
+    function startGame() {
+        lives = 3; bullets = []; enemyBullets = []; enemies = []; particles = []; powerups = [];
+        player.x = 180; player.y = 400; player.hasShield = player.isRolling = false; player.rollFrame = 0;
+        joystick.active = false; joystick.stickX = joystick.baseX; joystick.stickY = joystick.baseY; joystick.dirX = joystick.dirY = 0;
+        startTime = Date.now(); elapsedTime = 0; isEnteringInitials = false; gameRunning = true; startScreen.style.display = 'none';
+    }
+
+    function formatTime(ms) {
+        let m = Math.floor(ms / 60000).toString().padStart(2, '0');
+        let s = Math.floor((ms % 60000) / 1000).toString().padStart(2, '0');
+        let c = Math.floor((ms % 1000) / 10).toString().padStart(2, '0');
+        return m + ":" + s + ":" + c;
+    }
+
+    function createExplosion(x, y, color) {
+        for (let i = 0; i < 8; i++) {
+            particles.push({ x: x, y: y, vx: (Math.random() - 0.5) * 6, vy: (Math.random() - 0.5) * 6, radius: Math.random() * 2 + 1, alpha: 1, decay: Math.random() * 0.03 + 0.02, color: color });
+        }
+    }
+
+    function spawnEnemy() {
+        if (Math.random() < 0.035 && enemies.length < 5) {
+            const types = [{ color: '#ff0055', speed: 3, shooter: false }, { color: '#ffff00', speed: 4.5, shooter: false }, { color: '#00ffff', speed: 2, shooter: true }];
+            const t = types[Math.floor(Math.random() * types.length)];
+            enemies.push({ x: Math.random() * 300 + 30, y: -20, width: 26, height: 22, speed: t.speed, color: t.color, canShoot: t.shooter, shootCooldown: Math.random() * 60 + 30 });
+        }
+        if (Math.random() < 0.003 && powerups.length < 1) powerups.push({ x: Math.random() * 320 + 20, y: -20, size: 14, speed: 2 });
+    }
+
+    function drawPixelHeart(x, y) {
+        ctx.fillStyle = '#ff0055';
+        ctx.fillRect(x + 3, y, 3, 3); ctx.fillRect(x + 9, y, 3, 3); ctx.fillRect(x, y + 3, 15, 6); ctx.fillRect(x + 3, y + 9, 9, 3); ctx.fillRect(x + 6, y + 12, 3, 3);
+    }
+
+    function hitPlayer() {
+        if (player.isRolling) return;
+        if (player.hasShield) { player.hasShield = false; createExplosion(player.x, player.y, '#00ffff'); return; }
+        createExplosion(player.x, player.y, '#00ff00'); lives--; checkGameOver();
+    }
+
+    function checkGameOver() {
+        if (lives <= 0) {
+            gameRunning = false;
+            finalTimeDisplay = formatTime(elapsedTime);
+            // Qualifies for name record sequence if it beats the third placement
+            if (elapsedTime > leaderboard[2].time) {
+                isEnteringInitials = true;
+                userInitials = "";
+            } else {
+                showMainMenuOverlay();
+            }
+        }
+    }
+
+    function saveInitialsAndShowMenu() {
+        leaderboard.push({ name: userInitials || "???", time: elapsedTime });
+        leaderboard.sort((a, b) => b.time - a.time);
+        leaderboard = leaderboard.slice(0, 3);
+        localStorage.setItem('pilot_leaderboard', JSON.stringify(leaderboard));
+        isEnteringInitials = false;
+        updateLeaderboardUI();
+        showMainMenuOverlay();
+    }
+
+    function showMainMenuOverlay() {
+        startScreen.style.display = 'flex';
+        document.querySelector('.blink').innerText = `GAME OVER\nTIME: ${finalTimeDisplay}\n\nTAP TO RESTART`;
+    }
+    function update() {
+        stars.forEach(function(s) { s.y += s.speed; if (s.y > 640) { s.y = 0; s.x = Math.random() * 360; } });
+        gridOffset = (gridOffset + gridSpeed) % 40; 
+        if (!gameRunning) return; 
+        elapsedTime = Date.now() - startTime;
+
+        if (player.isRolling) { player.rollFrame++; if (player.rollFrame >= player.rollDuration) player.isRolling = false; }
+        if (joystick.active) { player.x += joystick.dirX * player.speed; player.y += joystick.dirY * player.speed; }
+        player.x = Math.max(17, Math.min(343, player.x)); player.y = Math.max(15, Math.min(460, player.y));
+
+        if (player.cooldown > 0) player.cooldown--;
+        if (player.cooldown === 0 && !player.isRolling) {
+            bullets.push({ x: player.x - 8, y: player.y - 15 }, { x: player.x + 8, y: player.y - 15 }); player.cooldown = player.maxCooldown;
+        }
+        bullets.forEach(function(b, i) { b.y -= 10; if (b.y < 0) bullets.splice(i, 1); });
+
+        powerups.forEach(function(p, i) {
+            p.y += p.speed; if (p.y > 460) powerups.splice(i, 1);
+            else if (Math.abs(p.x - player.x) < 25 && Math.abs(p.y - player.y) < 25) { player.hasShield = true; powerups.splice(i, 1); }
+        });
+
+        enemyBullets.forEach(function(eb, i) {
+            eb.y += 6; if (eb.y > 640) enemyBullets.splice(i, 1);
+            else if (Math.abs(eb.x - player.x) < 15 && Math.abs(eb.y - player.y) < 15) { enemyBullets.splice(i, 1); hitPlayer(); }
+        });
+
+        spawnEnemy();
+        enemies.forEach(function(e, i) {
+            e.y += e.speed;
+            if (e.color === '#00ffff') {
+                e.x += Math.sin(e.y * 0.05) * 2;
+                if (e.canShoot) { e.shootCooldown--; if (e.shootCooldown <= 0) { enemyBullets.push({ x: e.x, y: e.y + 15 }); e.shootCooldown = 90; } }
+            }
+            if (e.y > 640) { enemies.splice(i, 1); lives--; checkGameOver(); return; }
+
+            bullets.forEach(function(b, bi) { if (Math.abs(b.x - e.x) < 15 && Math.abs(b.y - e.y) < 15) { createExplosion(e.x, e.y, e.color); enemies.splice(i, 1); bullets.splice(bi, 1); } });
+            if (Math.abs(e.x - player.x) < 25 && Math.abs(e.y - player.y) < 25) { enemies.splice(i, 1); hitPlayer(); }
+        });
+        particles.forEach(function(p, i) { p.x += p.vx; p.y += p.vy; p.alpha -= p.decay; if (p.alpha <= 0) particles.splice(i, 1); });
+    }
+
+    function draw() {
+        ctx.fillStyle = '#050515'; ctx.fillRect(0, 0, 360, 640);
+        ctx.fillStyle = '#ffffff'; stars.forEach(function(s) { ctx.globalAlpha = s.speed / 4; ctx.fillRect(s.x, s.y, s.size, s.size); }); ctx.globalAlpha = 1.0;
+        ctx.strokeStyle = '#3d0c5a'; ctx.lineWidth = 1;
+        for (let y = gridOffset; y < 640; y += 40) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(360, y); ctx.stroke(); }
+        for (let i = 0; i <= 10; i++) { let x = 36 * i; ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, 640); ctx.stroke(); }
+
+        // --- DRAW RETRO INTITIAL ENTRY MODE VIA CANVAS ---
+        if (isEnteringInitials) {
+            ctx.fillStyle = "rgba(5, 5, 20, 0.9)"; ctx.fillRect(0, 0, 360, 640);
+            ctx.font = '12px "Press Start 2P"'; ctx.fillStyle = '#ffff00'; ctx.textAlign = 'center';
+            ctx.fillText("★ NEW RANKING ★", 180, 140);
+            ctx.fillStyle = '#ffffff'; ctx.font = '9px "Press Start 2P"';
+            ctx.fillText(`SURVIVED: ${finalTimeDisplay}`, 180, 180);
+            ctx.fillText("ENTER PILOT INITIALS", 180, 240);
+
+            // Print character slot markers
+            ctx.font = '24px "Press Start 2P"'; ctx.fillStyle = '#00ffff';
+            for (let i = 0; i < 3; i++) {
+                let char = userInitials[i] || "_";
+                ctx.fillText(char, 110 + i * 70, 320);
+            }
+            ctx.textAlign = 'left'; // Reset
+
+            // Render custom themed touch keyboard grid lines
+            keyboardButtons.forEach(btn => {
+                ctx.strokeStyle = btn.isDel ? '#ff0055' : '#00ffff';
+                ctx.shadowColor = btn.isDel ? '#ff0055' : '#00ffff'; ctx.shadowBlur = 4; ctx.lineWidth = 1.5;
+                ctx.strokeRect(btn.x, btn.y, btn.w, btn.h); ctx.shadowBlur = 0;
+                
+                ctx.fillStyle = btn.isDel ? 'rgba(255, 0, 85, 0.15)' : 'rgba(0, 255, 255, 0.1)';
+                ctx.fillRect(btn.x, btn.y, btn.w, btn.h);
+                
+                ctx.fillStyle = '#ffffff'; ctx.font = btn.isDel ? '11px Arial' : '10px "Press Start 2P"';
+                ctx.fillText(btn.char, btn.x + (btn.isDel ? 10 : 8), btn.y + 22);
+            });
+            return;
+        }
+
+        if (!gameRunning) return;
+
+        ctx.fillStyle = '#00ffff'; bullets.forEach(function(b) { ctx.fillRect(b.x - 1.5, b.y, 3, 12); });
+        ctx.fillStyle = '#ffff00'; enemyBullets.forEach(function(eb) { ctx.fillRect(eb.x - 1.5, eb.y, 3, 10); });
+        powerups.forEach(function(p) { ctx.strokeStyle = '#00ffff'; ctx.lineWidth = 2; ctx.strokeRect(p.x - p.size/2, p.y - p.size/2, p.size, p.size); ctx.fillStyle = 'rgba(0, 255, 255, 0.2)'; ctx.fillRect(p.x - p.size/2, p.y - p.size/2, p.size, p.size); });
+
+        ctx.save(); ctx.translate(player.x, player.y); if (player.isRolling) ctx.scale(Math.cos((player.rollFrame / player.rollDuration) * Math.PI * 2), 1.0);
+        ctx.strokeStyle = player.isRolling ? '#ffffff' : '#00ff00'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(0, -15); ctx.lineTo(17, 15); ctx.lineTo(8, 7); ctx.lineTo(-8, 7); ctx.lineTo(-17, 15); ctx.closePath(); ctx.stroke(); ctx.restore();
+        if (player.hasShield && !player.isRolling) { ctx.strokeStyle = '#00ffff'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(player.x, player.y, 34, 0, Math.PI * 2); ctx.stroke(); }
+
+        enemies.forEach(function(e) { ctx.strokeStyle = e.color; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(e.x, e.y + 11); ctx.lineTo(e.x - 13, e.y - 11); ctx.lineTo(e.x, e.y - 5); ctx.lineTo(e.x + 13, e.y - 11); ctx.closePath(); ctx.stroke(); });
+        particles.forEach(function(p) { ctx.save(); ctx.globalAlpha = p.alpha; ctx.fillStyle = p.color; ctx.beginPath(); ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2); ctx.fill(); ctx.restore(); });
+
+        ctx.fillStyle = "rgba(5, 5, 25, 0.75)"; ctx.fillRect(0, 460, 360, 180); ctx.strokeStyle = "#3d0c5a"; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(0, 460); ctx.lineTo(360, 460); ctx.stroke();
+        ctx.strokeStyle = "#00ffff"; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(joystick.baseX, joystick.baseY, joystick.baseRadius, 0, Math.PI * 2); ctx.stroke();
+        ctx.fillStyle = joystick.active ? "#ff0055" : "#3d0c5a"; ctx.strokeStyle = "#ffffff"; ctx.beginPath(); ctx.arc(joystick.stickX, joystick.stickY, joystick.stickRadius, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+
+        ctx.font = '9px "Press Start 2P"'; ctx.fillStyle = '#ffffff'; ctx.fillText("TIME: " + formatTime(elapsedTime), 15, 30);
+        for (let i = 0; i < lives; i++) drawPixelHeart(250 + (i * 20), 18);
+    }
+
+    function loop() { update(); draw(); requestAnimationFrame(loop); }
+    loop();
+</script>
+</body>
+</html>
