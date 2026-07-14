@@ -7,154 +7,153 @@
   <style>
     @import url('https://googleapis.com');
 
-    /* PITCH BLACK RETRO BACKGROUND WITH INTEGRATED GLOWING NEON GRID */
+    /* RETRO ARCADE PITCH BLACK OVERRIDE - Destroys white background caching issues */
     html, body {
       background-color: #05000a !important;
       background-image: 
         linear-gradient(rgba(255, 0, 127, 0.04) 1px, transparent 1px),
         linear-gradient(90deg, rgba(255, 0, 127, 0.04) 1px, transparent 1px) !important;
       background-size: 25px 25px !important;
-      margin: 0;
-      padding: 0;
-      font-family: 'Press Start 2P', 'Courier Prime', monospace;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      min-height: 100vh;
-      color: #39ff14;
+      margin: 0 !important;
+      padding: 0 !important;
+      font-family: 'Press Start 2P', 'Courier Prime', monospace !important;
+      display: flex !important;
+      justify-content: center !important;
+      align-items: center !important;
+      min-height: 100vh !important;
+      color: #39ff14 !important;
     }
 
-    /* GRID ARCHITECTURE: Strictly locked to exactly 2 columns across ALL viewport widths */
+    /* CABINET GRID ARCHITECTURE - Locked to exactly two per row on all screen sizes */
     .dashboard-grid {
-      display: grid;
+      display: grid !important;
       grid-template-columns: repeat(2, 1fr) !important;
-      gap: 20px;
-      width: 100%;
-      max-width: 640px;
-      padding: 20px;
-      box-sizing: border-box;
+      gap: 20px !important;
+      width: 100% !important;
+      max-width: 640px !important;
+      padding: 20px !important;
+      box-sizing: border-box !important;
     }
 
-    /* ROUNDED RECTANGLE ARCADE CHASSIS */
+    /* ROUNDED RECTANGLE INTERACTIVE GAME TILES */
     .game-card {
-      text-decoration: none;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
+      text-decoration: none !important;
+      display: flex !important;
+      flex-direction: column !important;
+      justify-content: center !important;
+      align-items: center !important;
       border-radius: 16px !important;
-      aspect-ratio: 3/2;
-      background-size: cover;
-      background-position: center;
-      padding: 12px;
-      box-sizing: border-box;
-      position: relative;
-      overflow: hidden;
-      transition: transform 0.1s steps(3), box-shadow 0.1s steps(3);
+      aspect-ratio: 3/2 !important;
+      background-size: cover !important;
+      background-position: center !important;
+      padding: 12px !important;
+      box-sizing: border-box !important;
+      position: relative !important;
+      overflow: hidden !important;
+      transition: transform 0.1s steps(3), box-shadow 0.1s steps(3) !important;
     }
 
-    /* SYNTHWAVE / COIN-OP HIGHLIGHT COLORS */
+    /* VIBRANT SYNTHWAVE FRAME NEONS */
     .game-card:nth-child(1) { 
-      background-color: #12001a; background-image: linear-gradient(135deg, #4d0000, #12001a), url('adventure.png');
-      border: 3px solid #ff003c; box-shadow: 0 0 10px #ff003c; 
+      background-color: #12001a !important; background-image: linear-gradient(135deg, #4d0000, #12001a), url('adventure.png') !important;
+      border: 3px solid #ff003c !important; box-shadow: 0 0 10px #ff003c !important; 
     }
     .game-card:nth-child(2) { 
-      background-color: #12001a; background-image: linear-gradient(135deg, #002244, #12001a), url('fighter-pilot.png');
-      border: 3px solid #00ffff; box-shadow: 0 0 10px #00ffff; 
+      background-color: #12001a !important; background-image: linear-gradient(135deg, #002244, #12001a), url('fighter-pilot.png') !important;
+      border: 3px solid #00ffff !important; box-shadow: 0 0 10px #00ffff !important; 
     }
     .game-card:nth-child(3) { 
-      background-color: #12001a; background-image: linear-gradient(135deg, #004422, #12001a), url('neon-snake.png');
-      border: 3px solid #39ff14; box-shadow: 0 0 10px #39ff14; 
+      background-color: #12001a !important; background-image: linear-gradient(135deg, #004422, #12001a), url('neon-snake.png') !important;
+      border: 3px solid #39ff14 !important; box-shadow: 0 0 10px #39ff14 !important; 
     }
     .game-card:nth-child(4) { 
-      background-color: #12001a; background-image: linear-gradient(135deg, #443300, #12001a), url('2048.png');
-      border: 3px solid #ffaa00; box-shadow: 0 0 10px #ffaa00; 
+      background-color: #12001a !important; background-image: linear-gradient(135deg, #443300, #12001a), url('2048.png') !important;
+      border: 3px solid #ffaa00 !important; box-shadow: 0 0 10px #ffaa00 !important; 
     }
     .game-card:nth-child(5) { 
-      background-color: #12001a; background-image: linear-gradient(135deg, #440033, #12001a), url('asteroid-evader.png');
-      border: 3px solid #ff007f; box-shadow: 0 0 10px #ff007f; 
+      background-color: #12001a !important; background-image: linear-gradient(135deg, #440033, #12001a), url('asteroid-evader.png') !important;
+      border: 3px solid #ff007f !important; box-shadow: 0 0 10px #ff007f !important; 
     }
 
-    /* 8-Bit Hover Jump Dynamics */
-    .game-card:hover { transform: scale(1.03); }
-    .game-card:nth-child(1):hover { box-shadow: 0 0 22px #ff003c; }
-    .game-card:nth-child(2):hover { box-shadow: 0 0 22px #00ffff; }
-    .game-card:nth-child(3):hover { box-shadow: 0 0 22px #39ff14; }
-    .game-card:nth-child(4):hover { box-shadow: 0 0 22px #ffaa00; }
-    .game-card:nth-child(5):hover { box-shadow: 0 0 22px #ff007f; }
+    /* Hover Scale Jumps */
+    .game-card:hover { transform: scale(1.03) !important; }
+    .game-card:nth-child(1):hover { box-shadow: 0 0 22px #ff003c !important; }
+    .game-card:nth-child(2):hover { box-shadow: 0 0 22px #00ffff !important; }
+    .game-card:nth-child(3):hover { box-shadow: 0 0 22px #39ff14 !important; }
+    .game-card:nth-child(4):hover { box-shadow: 0 0 22px #ffaa00 !important; }
+    .game-card:nth-child(5):hover { box-shadow: 0 0 22px #ff007f !important; }
 
-    /* Shadow Mask Layer for Content Contrast */
+    /* Contrast Shading Veil */
     .game-card::before {
-      content: '';
-      position: absolute;
-      top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(0, 0, 0, 0.7);
-      z-index: 1;
+      content: '' !important;
+      position: absolute !important;
+      top: 0 !important; left: 0 !important; right: 0 !important; bottom: 0 !important;
+      background: rgba(0, 0, 0, 0.7) !important;
+      z-index: 1 !important;
     }
 
     .card-content {
-      position: relative;
-      z-index: 2;
-      text-align: center;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      width: 100%;
-      height: 100%;
+      position: relative !important;
+      z-index: 2 !important;
+      text-align: center !important;
+      display: flex !important;
+      flex-direction: column !important;
+      justify-content: center !important;
+      align-items: center !important;
+      width: 100% !important;
+      height: 100% !important;
     }
 
-    /* Arcade Display Headings */
     .game-title {
-      color: #ffffff;
-      font-size: 11px;
-      font-weight: bold;
-      text-transform: uppercase;
-      text-shadow: 2px 2px 0px #000;
-      margin: 0;
-      letter-spacing: -1px;
+      color: #ffffff !important;
+      font-size: 11px !important;
+      font-weight: bold !important;
+      text-transform: uppercase !important;
+      text-shadow: 2px 2px 0px #000 !important;
+      margin: 0 !important;
+      letter-spacing: -1px !important;
     }
 
-    /* ROUNDED RECTANGLE BUTTON INTERFACES (NEON PINK) */
+    /* NEON PINK ROUNDED RECTANGLE BUTTON INTERFACES */
     .game-btn {
-      margin-top: 14px;
-      color: #ffffff;
-      background-color: #240012;
-      border: 2px solid #ff007f;
+      margin-top: 14px !important;
+      color: #ffffff !important;
+      background-color: #240012 !important;
+      border: 2px solid #ff007f !important;
       border-radius: 8px !important;
-      padding: 6px 12px;
-      font-weight: bold;
-      font-size: 8px;
-      text-transform: uppercase;
-      box-shadow: 0 0 8px #ff007f, inset 0 0 4px #ff007f;
-      text-shadow: 0 0 3px #ffffff;
-      transition: background-color 0.1s, box-shadow 0.1s;
+      padding: 6px 12px !important;
+      font-weight: bold !important;
+      font-size: 8px !important;
+      text-transform: uppercase !important;
+      box-shadow: 0 0 8px #ff007f, inset 0 0 4px #ff007f !important;
+      text-shadow: 0 0 3px #ffffff !important;
+      letter-spacing: 0px !important;
+      transition: background-color 0.1s, box-shadow 0.1s !important;
     }
     
-    /* Interactive Hover Backlighting illumination */
     .game-card:hover .game-btn {
-      background-color: #ff007f;
-      color: #000000;
-      box-shadow: 0 0 15px #ff007f;
-      text-shadow: none;
+      background-color: #ff007f !important;
+      color: #000000 !important;
+      box-shadow: 0 0 15px #ff007f !important;
+      text-shadow: none !important;
     }
 
-    /* Blinking Arcade Cabinet Quarter Acceptor Slot Box */
+    /* Coin Intake Rounded Rectangle Identifier Slot */
     .placeholder-card {
-      border: 3px dashed #ff007f;
+      border: 3px dashed #ff007f !important;
       border-radius: 16px !important;
-      aspect-ratio: 3/2;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      color: #ff007f;
-      font-weight: bold;
-      font-size: 9px;
-      text-transform: uppercase;
-      background-color: #0d0014;
-      text-shadow: 0 0 5px #ff007f;
-      box-shadow: inset 0 0 10px rgba(255, 0, 127, 0.2);
-      animation: coinBlink 2s infinite steps(2);
+      aspect-ratio: 3/2 !important;
+      display: flex !important;
+      justify-content: center !important;
+      align-items: center !important;
+      color: #ff007f !important;
+      font-weight: bold !important;
+      font-size: 9px !important;
+      text-transform: uppercase !important;
+      background-color: #0d0014 !important;
+      text-shadow: 0 0 5px #ff007f !important;
+      box-shadow: inset 0 0 10px rgba(255, 0, 127, 0.2) !important;
+      animation: coinBlink 2s infinite steps(2) !important;
     }
 
     @keyframes coinBlink {
@@ -162,11 +161,10 @@
       50% { opacity: 0.3; }
     }
 
-    /* Mobile Text Scaling Safety Catch (Maintains 2 per row) */
     @media (max-width: 500px) {
-      .dashboard-grid { gap: 12px; padding: 10px; }
-      .game-title { font-size: 9px; }
-      .game-btn { font-size: 7px; padding: 4px 8px; }
+      .dashboard-grid { gap: 12px !important; padding: 10px !important; }
+      .game-title { font-size: 9px !important; }
+      .game-btn { font-size: 7px !important; padding: 4px 8px !important; }
     }
   </style>
 </head>
@@ -174,7 +172,7 @@
 
   <div class="dashboard-grid">
 
-    <!-- 1. Adventure Card Element (Update href to folder/game path) -->
+    <!-- 1. Adventure Card Element -->
     <a href="adventure/index.html" class="game-card">
       <div class="card-content">
         <h2 class="game-title">Adventure</h2>
@@ -182,7 +180,7 @@
       </div>
     </a>
 
-    <!-- 2. Fighter Pilot Card Element (Update href to folder/game path) -->
+    <!-- 2. Fighter Pilot Card Element -->
     <a href="fighter-pilot/index.html" class="game-card">
       <div class="card-content">
         <h2 class="game-title">Fighter Pilot</h2>
@@ -190,7 +188,7 @@
       </div>
     </a>
 
-    <!-- 3. Neon Snake Card Element (Update href to folder/game path) -->
+    <!-- 3. Neon Snake Card Element -->
     <a href="neon-snake/index.html" class="game-card">
       <div class="card-content">
         <h2 class="game-title">Neon Snake</h2>
@@ -198,7 +196,7 @@
       </div>
     </a>
 
-    <!-- 4. 2048 Card Element (Update href to folder/game path) -->
+    <!-- 4. 2048 Card Element -->
     <a href="2048/index.html" class="game-card">
       <div class="card-content">
         <h2 class="game-title">2048</h2>
@@ -206,7 +204,7 @@
       </div>
     </a>
 
-    <!-- 5. Asteroid Evader Card Element (Update href to folder/game path) -->
+    <!-- 5. Asteroid Evader Card Element -->
     <a href="asteroid-evader/index.html" class="game-card">
       <div class="card-content">
         <h2 class="game-title">Asteroid Evader</h2>
