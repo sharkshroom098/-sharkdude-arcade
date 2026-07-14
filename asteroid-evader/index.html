@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8" />
+		<meta
+			name="viewport"
+			content="width=device-width,initial-scale=1,user-scalable=no"
+		/>
+		<title>Arcade</title>
+		<style>
+			body{margin:0;background:#050505;color:#39ff14;font-family:'Courier New',Courier,monospace;display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;overflow:hidden;touch-action:none}h1{margin:5px;font-size:24px;text-shadow:0 0 10px #39ff14}canvas{border:4px solid #ff007f;box-shadow:0 0 20px #ff007f,inset 0 0 10px #ff007f;background:#000;max-width:90vw;max-height:55vh}.ui-container{display:flex;justify-content:center;align-items:center;width:90vw;max-width:400px;margin-top:5px;height:35px}.reset-btn{display:none;background:none;border:1px solid #ff007f;color:#ff007f;font-family:'Courier New',Courier,monospace;font-size:11px;padding:6px 12px;cursor:pointer;border-radius:4px;box-shadow:0 0 5px #ff007f;z-index:20;user-select:none;-webkit-user-select:none}.reset-btn:active{background:rgba(255,0,127,.3)}.touch-container{display:flex;width:90vw;justify-content:space-between;margin-top:10px}.touch-btn{width:45%;height:65px;border:2px solid #00ffff;background:rgba(0,255,255,.1);color:#00ffff;font-size:28px;font-weight:700;display:flex;align-items:center;justify-content:center;border-radius:10px;box-shadow:0 0 10px #00ffff;user-select:none;-webkit-user-select:none}.kb-container{display:none;flex-direction:column;gap:5px;width:95vw;max-width:400px;margin-top:10px;z-index:30}.kb-row{display:flex;justify-content:center;gap:4px}.kb-key{flex:1;height:40px;background:rgba(255,0,127,.1);border:1px solid #ff007f;color:#ff007f;font-family:'Courier New',Courier,monospace;font-size:16px;font-weight:700;display:flex;align-items:center;justify-content:center;border-radius:4px;cursor:pointer;box-shadow:0 0 5px #ff007f;user-select:none;-webkit-user-select:none}.kb-key:active{background:rgba(255,0,127,.4)}
+		</style>
+	</head>
+	<body>
+		<h1>ASTEROID EVADER</h1>
+		<canvas id="gameCanvas" width="400" height="500"></canvas>
+		<div id="uiBar" class="ui-container">
+			<button id="resetBestBtn" class="reset-btn">
+				RESET LEADERBOARD
+			</button>
+		</div>
+		<div id="touchControls" class="touch-container">
+			<div id="leftBtn" class="touch-btn">◀</div>
+			<div id="rightBtn" class="touch-btn">▶</div>
+		</div>
+		<div id="virtualKeyboard" class="kb-container">
+			<div class="kb-row">
+				<button class="kb-key" data-key="Q">Q</button
+				><button class="kb-key" data-key="W">W</button
+				><button class="kb-key" data-key="E">E</button
+				><button class="kb-key" data-key="R">R</button
+				><button class="kb-key" data-key="T">T</button
+				><button class="kb-key" data-key="Y">Y</button
+				><button class="kb-key" data-key="U">U</button
+				><button class="kb-key" data-key="I">I</button
+				><button class="kb-key" data-key="O">O</button
+				><button class="kb-key" data-key="P">P</button>
+			</div>
+			<div class="kb-row">
+				<button class="kb-key" data-key="A">A</button
+				><button class="kb-key" data-key="S">S</button
+				><button class="kb-key" data-key="D">D</button
+				><button class="kb-key" data-key="F">F</button
+				><button class="kb-key" data-key="G">G</button
+				><button class="kb-key" data-key="H">H</button
+				><button class="kb-key" data-key="J">J</button
+				><button class="kb-key" data-key="K">K</button
+				><button class="kb-key" data-key="L">L</button>
+			</div>
+			<div class="kb-row">
+				<button class="kb-key" data-key="Z">Z</button
+				><button class="kb-key" data-key="X">X</button
+				><button class="kb-key" data-key="C">C</button
+				><button class="kb-key" data-key="V">V</button
+				><button class="kb-key" data-key="B">B</button
+				><button class="kb-key" data-key="N">N</button
+				><button class="kb-key" data-key="M">M</button
+				><button
+					class="kb-key"
+					style="flex:1.5;color:#00ffff;border-color:#00ffff;background:rgba(0,255,255,0.1);box-shadow:0 0 5px #00ffff"
+					data-key="DEL"
+				>
+					⌫
+				</button>
+			</div>
+		</div>
+		<script>
+			const canvas=document.getElementById("gameCanvas"),ctx=canvas.getContext("2d");const touchControls=document.getElementById("touchControls"),vKeyboard=document.getElementById("virtualKeyboard"),resetBtn=document.getElementById("resetBestBtn");let player={x:185,y:440,width:30,height:30,speed:7},obstacles=[],startTime=Date.now(),elapsedTime=0,gameOver=!1,keys={},spawnTimer=0,baseSpeed=2.5;let enteringInitials=!1,initials=[];const defaultScores=[{name:"___",time:0},{name:"___",time:0},{name:"___",time:0}];let leaderboard=JSON.parse(localStorage.getItem("arcadeLeaderboard"))||[...defaultScores];function toggleUI(e){enteringInitials=e;if(e){touchControls.style.display="none";vKeyboard.style.display="flex";resetBtn.style.display="none"}else if(gameOver){touchControls.style.display="none";vKeyboard.style.display="none";resetBtn.style.display="block"}else{touchControls.style.display="flex";vKeyboard.style.display="none";resetBtn.style.display="none"}}window.addEventListener("keydown",e=>{if(enteringInitials){if(/^[a-zA-Z]$/.test(e.key)&&initials.length<3){initials.push(e.key.toUpperCase());drawGameOver()}if("Backspace"===e.key){initials.pop();drawGameOver()}if("Enter"===e.key&&3===initials.length){saveScore()}}else{keys[e.key]=!0;if(" "===e.key&&gameOver&&!enteringInitials)restartGame()}});window.addEventListener("keyup",e=>{if(!enteringInitials)keys[e.key]=!1});const leftBtn=document.getElementById("leftBtn"),rightBtn=document.getElementById("rightBtn");leftBtn.addEventListener("touchstart",e=>{e.preventDefault();if(!enteringInitials)keys.ArrowLeft=!0});leftBtn.addEventListener("touchend",e=>{e.preventDefault();keys.ArrowLeft=!1});rightBtn.addEventListener("touchstart",e=>{e.preventDefault();if(!enteringInitials)keys.ArrowRight=!0});rightBtn.addEventListener("touchend",e=>{e.preventDefault();keys.ArrowRight=!1});canvas.addEventListener("touchstart",e=>{e.preventDefault();if(gameOver&&!enteringInitials)restartGame()});document.querySelectorAll(".kb-key").forEach(btn=>{const handleKey=e=>{e.preventDefault();e.stopPropagation();const t=btn.getAttribute("data-key");if("DEL"===t){initials.pop()}else if(initials.length<3){initials.push(t)}drawGameOver();if(3===initials.length){setTimeout(saveScore,400)}};btn.addEventListener("touchstart",handleKey);btn.addEventListener("click",handleKey)});function doReset(e){e.preventDefault();e.stopPropagation();localStorage.setItem("arcadeLeaderboard",JSON.stringify(defaultScores));leaderboard=[...defaultScores];keys={};drawGameOver()}resetBtn.addEventListener("click",doReset);resetBtn.addEventListener("touchstart",doReset);function spawnObstacle(){let e=30*Math.random()+15,t=Math.random()*(canvas.width-e),a=[{ox:.2*e,oy:.2*e,w:.2*e,h:.2*e},{ox:.6*e,oy:.3*e,w:.15*e,h:.15*e},{ox:.3*e,oy:.6*e,w:.25*e,h:.25*e}],n=baseSpeed+.15*elapsedTime+1.5*Math.random();obstacles.push({x:t,y:-e,width:e,height:e,speed:n,craters:a})}function restartGame(){keys={};player.x=185;obstacles=[];startTime=Date.now();elapsedTime=0;gameOver=!1;initials=[];toggleUI(!1);loop()}function checkCollision(e,t){return e.x<t.x+t.width&&e.x+e.width>t.x&&e.y<t.y+t.height&&e.y+e.height>t.y}function formatTime(e){let t=Math.floor(e/60),a=Math.floor(e%60),n=Math.floor(e%1*100);return`${t.toString().padStart(2,"0")}:${a.toString().padStart(2,"0")}.${n.toString().padStart(2,"0")}`}function saveScore(){leaderboard.push({name:initials.join(""),time:elapsedTime});leaderboard.sort((e,t)=>t.time-e.time);leaderboard=leaderboard.slice(0,3);localStorage.setItem("arcadeLeaderboard",JSON.stringify(leaderboard));toggleUI(!1)}function drawGameOver(){ctx.fillStyle="rgba(0, 0, 0, 0.8)";ctx.fillRect(0,0,canvas.width,canvas.height);ctx.textAlign="center";if(enteringInitials){ctx.fillStyle="#ff007f";ctx.font="22px 'Courier New'";ctx.fillText("NEW HIGH SCORE!",canvas.width/2,60);ctx.fillStyle="#ffffff";ctx.font="14px 'Courier New'";ctx.fillText("TAP VIRTUAL KEYS BELOW",canvas.width/2,100);ctx.font="40px 'Courier New'";ctx.fillStyle="#39ff14";let e=["_","_","_"];for(let t=0;t<initials.length;t++)e[t]=initials[t];ctx.fillText(e.join(" "),canvas.width/2,170)}else{ctx.fillStyle="#ff007f";ctx.font="26px 'Courier New'";ctx.fillText("GAME OVER",canvas.width/2,70);ctx.fillStyle="#ffffff";ctx.font="16px 'Courier New'";ctx.fillText(`YOUR TIME: ${formatTime(elapsedTime)}`,canvas.width/2,110);ctx.fillText("TAP SCREEN TO RESTART",canvas.width/2,145)}ctx.fillStyle="#ff007f";ctx.font="18px 'Courier New'";ctx.fillText("TOP 3 SCORES",canvas.width/2,260);ctx.fillStyle="#39ff14";ctx.font="16px 'Courier New'";leaderboard.forEach((e,t)=>{ctx.fillText(`${t+1}. ${e.name}-${formatTime(e.time)}`,canvas.width/2,300+35*t)})}function loop(){if(gameOver){drawGameOver();return}requestAnimationFrame(loop);ctx.clearRect(0,0,canvas.width,canvas.height);elapsedTime=(Date.now()-startTime)/1e3;ctx.fillStyle="rgba(255, 255, 255, 0.03)";for(let e=0;e<canvas.height;e+=4)ctx.fillRect(0,e,canvas.width,2);if(keys.ArrowLeft&&player.x>0)player.x-=player.speed;if(keys.ArrowRight&&player.x<canvas.width-player.width)player.x+=player.speed;ctx.strokeStyle="#00ffff";ctx.lineWidth=3;ctx.shadowBlur=10;ctx.shadowColor="#00ffff";ctx.beginPath();ctx.moveTo(player.x+player.width/2,player.y);ctx.lineTo(player.x,player.y+player.height);ctx.lineTo(player.x+player.width,player.y+player.height);ctx.closePath();ctx.stroke();spawnTimer++;let e=Math.max(8,22-Math.floor(.2*elapsedTime));if(spawnTimer%e==0)spawnObstacle();ctx.strokeStyle="#ff007f";ctx.shadowColor="#ff007f";ctx.lineWidth=2;for(let t=obstacles.length-1;t>=0;t--){let a=obstacles[t];a.y+=a.speed;ctx.strokeRect(a.x,a.y,a.width,a.height);a.craters.forEach(e=>{ctx.strokeRect(a.x+e.ox,a.y+e.oy,e.w,e.h)});if(checkCollision(player,a)){gameOver=!0;keys={};let r=leaderboard.length<3||elapsedTime>leaderboard[leaderboard.length-1].time;if(r){toggleUI(!0)}else{toggleUI(!1)}}if(a.y>canvas.height)obstacles.splice(t,1)}ctx.shadowBlur=0;ctx.fillStyle="#39ff14";ctx.font="16px 'Courier New'";ctx.textAlign="left";ctx.fillText(`TIME: ${formatTime(elapsedTime)}`,15,30);ctx.fillText(`BEST: ${formatTime(leaderboard[0].time)}`,15,50)}loop();
+		</script>
+	</body>
+</html>
