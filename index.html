@@ -33,7 +33,7 @@
     }
     
     .arcade-title {
-      font-size: 24px !important;
+      font-size: 28px !important; /* Made larger to scale with the screen */
       font-weight: bold !important;
       color: #00ffff !important;
       text-transform: uppercase !important;
@@ -57,19 +57,19 @@
       }
     }
 
-    /* CABINET GRID ARCHITECTURE - 2 per row across all viewports */
+    /* CABINET GRID ARCHITECTURE - Expanded up to 1000px max width so it feels zoomed-in */
     .dashboard-grid {
       display: grid !important;
       grid-template-columns: repeat(2, 1fr) !important;
-      gap: 20px !important;
+      gap: 24px !important;
       width: 100% !important;
-      max-width: 640px !important;
-      padding: 20px !important;
+      max-width: 1000px !important; 
+      padding: 24px !important;
       box-sizing: border-box !important;
       margin-bottom: 40px !important;
     }
 
-    /* ROUNDED RECTANGLE INTERACTIVE GAME TILES */
+    /* ROUNDED RECTANGLE INTERACTIVE GAME TILES - Aspect ratio widened to 16/10 */
     .game-card {
       text-decoration: none !important;
       display: flex !important;
@@ -77,10 +77,10 @@
       justify-content: center !important;
       align-items: center !important;
       border-radius: 16px !important;
-      aspect-ratio: 3/2 !important;
+      aspect-ratio: 16/10 !important; 
       background-size: cover !important;
       background-position: center !important;
-      padding: 12px !important;
+      padding: 16px !important;
       box-sizing: border-box !important;
       position: relative !important;
       overflow: hidden !important;
@@ -140,7 +140,7 @@
 
     .game-title {
       color: #ffffff !important;
-      font-size: 11px !important;
+      font-size: 14px !important; /* Bumped text size up for high legibility */
       font-weight: bold !important;
       text-transform: uppercase !important;
       text-shadow: 2px 2px 0px #000 !important;
@@ -153,13 +153,13 @@
     .placeholder-card {
       border: 3px dashed #440033 !important;
       border-radius: 16px !important;
-      aspect-ratio: 3/2 !important;
+      aspect-ratio: 16/10 !important; /* Matching widened layout aspect ratio */
       display: flex !important;
       justify-content: center !important;
       align-items: center !important;
       color: #ff007f !important;
       font-weight: bold !important;
-      font-size: 9px !important;
+      font-size: 11px !important;
       text-transform: uppercase !important;
       background-color: #0d0014 !important;
       text-shadow: 0 0 5px #ff007f !important;
@@ -173,9 +173,10 @@
     }
 
     @media (max-width: 500px) {
-      .arcade-title { font-size: 16px !important; }
-      .dashboard-grid { gap: 12px !important; padding: 10px !important; }
-      .game-title { font-size: 9px !important; }
+      .arcade-title { font-size: 18px !important; }
+      .dashboard-grid { gap: 12px !important; padding: 12px !important; }
+      .game-title { font-size: 10px !important; }
+      .placeholder-card { font-size: 8px !important; }
     }
   </style>
 </head>
