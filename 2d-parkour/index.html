@@ -53,7 +53,9 @@
 				</div>
 				<div id="win-screen" class="screen hidden">
 					<h1>VICTORY!</h1>
-					<p>You mastered all stages and collected the gems.</p>
+					<p>
+						You mastered all stages and collected the hidden gems.
+					</p>
 					<button id="restart-btn">PLAY AGAIN</button>
 				</div>
 			</div>
@@ -66,7 +68,7 @@
 	#app-wrapper { position: relative; width: 100%; height: 100%; display: flex; flex-direction: column; padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left); }
 	#ui-container { width: 100%; height: 30px; display: flex; justify-content: space-between; align-items: center; font-size: 14px; font-weight: bold; text-shadow: 2px 2px #ff00ff; padding: 0 15px; }
 	#game-container { position: relative; flex: 1; width: 100%; border: 4px solid #00ffff; box-shadow: 0 0 20px #00ffff; background-color: #050515; overflow: hidden; }
-	canvas { width: 100%; height: 100%; display: block; object-fit: contain; }
+	canvas { width: 100%; height: 100%; display: block; object-fit: contain; image-rendering: pixelated; }
 	#bonus-code-box input::placeholder { color: rgba(5, 255, 0, 0.4); }
 	#bonus-code-box.hidden, .hidden { display: none !important; }
 	.screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.85); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 10; text-align: center; padding: 20px; }
@@ -76,7 +78,7 @@
 	#touch-controls { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 5; }
 	.touch-zone { position: absolute; pointer-events: auto; }
 	#joystick-zone { left: 25px; bottom: 20px; width: 110px; height: 110px; background: rgba(255, 255, 255, 0.08); border: 3px dashed #00ffff; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
-	#joystick-knob { width: 45px; height: 45px; background: #ff00ff; border: 2px solid #fff; border-radius: 50%; box-shadow: 0 0 10px #ff00ff; transform: translate3d(0, 0, 0); }
+	#joystick-knob { width: 45px; height: 45px; background: #ff00ff; border: 2px solid #fff; border-radius: 50%; box-shadow: 0 0 10px #ff00ff; transform: translate3d(0, 0, 0); will-change: transform; }
 	#jump-btn { right: 35px; bottom: 25px; width: 75px; height: 75px; background: rgba(5, 255, 0, 0.2); border: 4px solid #05ff00; border-radius: 50%; color: #05ff00; font-size: 16px; font-weight: bold; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 15px #05ff00; }
 	#jump-btn:active { background: #05ff00; color: #000; }
 </style>
@@ -97,27 +99,49 @@
 	    diamonds: [{ x: 100, y: 280, collected: false }, { x: 220, y: 220, collected: false }, { x: 250, y: 220, collected: false }, { x: 370, y: 160, collected: false }, { x: 400, y: 160, collected: false }, { x: 520, y: 220, collected: false }, { x: 550, y: 220, collected: false }, { x: 700, y: 300, collected: false }, { x: 730, y: 240, collected: false }, { x: 300, y: 100, collected: false }, { x: 450, y: 100, collected: false }, { x: 600, y: 120, collected: false }]
 	};
 	const joystickZone = document.getElementById('joystick-zone'), joystickKnob = document.getElementById('joystick-knob'), jumpBtn = document.getElementById('jump-btn');
-	let joystickActive = false, joystickTouchId = null, joystickCenter = { x: 0, y: 0 };
-	function updateJoystickCenter() { const rect = joystickZone.getBoundingClientRect(); joystickCenter = rect.width === 0 ? { x: 80, y: window.innerHeight - 75 } : { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 }; }
+	let joystickActive = false, joystickTouchId = null, joystickCenter = { x: 80, y: 0 };
+
+	// Performance Tweak: Coordinates cached instantly once on boot/resize to spare the DOM rendering layout pass
+	function cacheControlsPositions() {
+	    const rect = joystickZone.getBoundingClientRect();
+	    if (rect.width > 0) joystickCenter = { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+	    else joystickCenter = { x: 80, y: window.innerHeight - 75 };
+	}
+	window.addEventListener('resize', cacheControlsPositions);
+	window.addEventListener('load', cacheControlsPositions);
+
 	window.addEventListener('touchstart', (e) => {
 	    if(e.target.id === 'cheat-input' || e.target.id === 'cheat-submit-btn') return;
+	    if(joystickCenter.y === 0) cacheControlsPositions();
 	    for (let i = 0; i < e.changedTouches.length; i++) {
-	        let touch = e.changedTouches[i]; updateJoystickCenter();
-	        let dx = touch.clientX - joystickCenter.x, dy = touch.clientY - joystickCenter.y, dist = Math.sqrt(dx * dx + dy * dy);
-	        if (dist < 75 && !joystickActive) { e.preventDefault(); joystickTouchId = touch.identifier; joystickActive = true; handleJoystickMove(touch.clientX, touch.clientY); }
+	        let touch = e.changedTouches[i];
+	        let dx = touch.clientX - joystickCenter.x, dy = touch.clientY - joystickCenter.y;
+	        if (dx*dx + dy*dy < 5625 && !joystickActive) { // Expanded 75px squared range match shortcut
+	            e.preventDefault(); joystickTouchId = touch.identifier; joystickActive = true;
+	            handleJoystickMove(touch.clientX, touch.clientY);
+	        }
 	    }
 	}, { passive: false });
+
 	window.addEventListener('touchmove', (e) => {
 	    if (!joystickActive) return;
-	    for (let i = 0; i < e.touches.length; i++) { if (e.touches[i].identifier === joystickTouchId) { if(e.cancelable) e.preventDefault(); handleJoystickMove(e.touches[i].clientX, e.touches[i].clientY); } }
+	    for (let i = 0; i < e.touches.length; i++) {
+	        if (e.touches[i].identifier === joystickTouchId) {
+	            if(e.cancelable) e.preventDefault();
+	            handleJoystickMove(e.touches[i].clientX, e.touches[i].clientY);
+	        }
+	    }
 	}, { passive: false });
-	const resetJoystick = () => { joystickActive = false; joystickTouchId = null; inputs.left = false; inputs.right = false; joystickKnob.style.transform = `translate(0, 0)`; };
+
+	const resetJoystick = () => { joystickActive = false; joystickTouchId = null; inputs.left = false; inputs.right = false; joystickKnob.style.transform = `translate3d(0, 0, 0)`; };
 	window.addEventListener('touchend', (e) => { for (let i = 0; i < e.changedTouches.length; i++) if (e.changedTouches[i].identifier === joystickTouchId) resetJoystick(); });
 	window.addEventListener('touchcancel', (e) => { for (let i = 0; i < e.changedTouches.length; i++) if (e.changedTouches[i].identifier === joystickTouchId) resetJoystick(); });
+
 	function handleJoystickMove(clientX, clientY) {
 	    let dx = clientX - joystickCenter.x, dy = clientY - joystickCenter.y, dist = Math.sqrt(dx * dx + dy * dy);
 	    if (dist > 35) { dx = (dx / dist) * 35; dy = (dy / dist) * 35; }
-	    joystickKnob.style.transform = `translate3d(${dx}px, ${dy}px, 0)`; inputs.left = dx < -8; inputs.right = dx > 8;
+	    joystickKnob.style.transform = `translate3d(${dx}px, ${dy}px, 0)`;
+	    inputs.left = dx < -8; inputs.right = dx > 8;
 	}
 	jumpBtn.addEventListener('touchstart', (e) => { e.preventDefault(); inputs.up = true; }, { passive: false });
 	jumpBtn.addEventListener('touchend', (e) => { e.preventDefault(); inputs.up = false; }, { passive: false });
@@ -147,8 +171,8 @@
 	        setTimeout(() => { document.getElementById('status-display').innerText = "GOLDEN DIMENSION"; }, 3000);
 	    }
 	}
-	document.getElementById('start-btn').addEventListener('click', () => { document.getElementById('start-screen').classList.add('hidden'); diamondCount = 0; hasSecretKey = false; isBonusActive = false; codeClaimed = false; document.getElementById('diamonds-display').innerText = `DIAMONDS: ${diamondCount}`; document.getElementById('status-display').innerText = "2D PARKOUR"; initLevel(0); gameActive = true; });
-	document.getElementById('restart-btn').addEventListener('click', () => { document.getElementById('win-screen').classList.add('hidden'); deathCount = 0; diamondCount = 0; hasSecretKey = false; isBonusActive = false; codeClaimed = false; document.getElementById('deaths-display').innerText = `DEATHS: ${deathCount}`; document.getElementById('diamonds-display').innerText = `DIAMONDS: ${diamondCount}`; document.getElementById('status-display').innerText = "2D PARKOUR"; levels.forEach(lvl => lvl.diamonds.forEach(d => d.collected = false)); bonusLevelData.diamonds.forEach(d => d.collected = false); if(levels.secretKeyItem) levels.secretKeyItem.collected = false; initLevel(0); gameActive = true; });
+	document.getElementById('start-btn').addEventListener('click', () => { document.getElementById('start-screen').classList.add('hidden'); cacheControlsPositions(); diamondCount = 0; hasSecretKey = false; isBonusActive = false; codeClaimed = false; document.getElementById('diamonds-display').innerText = `DIAMONDS: ${diamondCount}`; document.getElementById('status-display').innerText = "2D PARKOUR"; initLevel(0); gameActive = true; });
+	document.getElementById('restart-btn').addEventListener('click', () => { document.getElementById('win-screen').classList.add('hidden'); cacheControlsPositions(); deathCount = 0; diamondCount = 0; hasSecretKey = false; isBonusActive = false; codeClaimed = false; document.getElementById('deaths-display').innerText = `DEATHS: ${deathCount}`; document.getElementById('diamonds-display').innerText = `DIAMONDS: ${diamondCount}`; document.getElementById('status-display').innerText = "2D PARKOUR"; levels.forEach(lvl => lvl.diamonds.forEach(d => d.collected = false)); bonusLevelData.diamonds.forEach(d => d.collected = false); if(levels.secretKeyItem) levels.secretKeyItem.collected = false; initLevel(0); gameActive = true; });
 	function initLevel(lvlIdx) { isBonusActive = false; currentLevel = lvlIdx; document.getElementById('bonus-code-box').classList.add('hidden'); document.getElementById('level-display').innerText = `LEVEL: ${currentLevel + 1}/5`; document.getElementById('status-display').innerText = "2D PARKOUR"; const lvl = levels[currentLevel]; player.x = lvl.start.x; player.y = lvl.start.y; player.vx = 0; player.vy = 0; player.grounded = false; resetJoystick(); }
 	function launchBonusStage() { isBonusActive = true; document.getElementById('bonus-code-box').classList.remove('hidden'); document.getElementById('level-display').innerText = `BONUS ROOM`; document.getElementById('status-display').innerText = "GOLDEN DIMENSION"; player.x = bonusLevelData.start.x; player.y = bonusLevelData.start.y; player.vx = 0; player.vy = 0; player.grounded = false; resetJoystick(); }
 	function checkCollision(obj1, obj2) { return obj1.x < obj2.x + obj2.w && obj1.x + obj1.width > obj2.x && obj1.y < obj2.y + obj2.h && obj1.y + obj1.height > obj2.y; }
@@ -156,13 +180,21 @@
 	    if (!gameActive) return;
 	    const lvl = isBonusActive ? bonusLevelData : levels[currentLevel];
 	    let currentFriction = FRICTION, currentSpeed = player.speed, accelRate = 0.5, standingOnIce = false;
-	    lvl.platforms.forEach(plat => { if (player.x + player.width > plat.x && player.x < plat.x + plat.w && Math.abs((player.y + player.height) - plat.y) < 2) { if (plat.type === 'ice') standingOnIce = true; } });
+
+	    // Fast optimized platform scanner loops
+	    for(let i=0; i<lvl.platforms.length; i++) {
+	        let plat = lvl.platforms[i];
+	        if (player.x + player.width > plat.x && player.x < plat.x + plat.w && Math.abs((player.y + player.height) - plat.y) < 2) {
+	            if (plat.type === 'ice') { standingOnIce = true; break; }
+	        }
+	    }
 	    if (standingOnIce) { currentFriction = 0.995; currentSpeed = 4.5; accelRate = 0.08; }
 	    if (inputs.right) { if (player.vx < currentSpeed) player.vx += accelRate; } else if (inputs.left) { if (player.vx > -currentSpeed) player.vx -= accelRate; } else { player.vx *= currentFriction; if (Math.abs(player.vx) < 0.1) player.vx = 0; }
 	    if (inputs.up && player.grounded) { player.vy = -player.jumpForce; player.grounded = false; }
 	    player.vy += GRAVITY; player.x += player.vx; player.y += player.vy;
 	    if (player.x < 0) player.x = 0; if (player.x + player.width > canvas.width) player.x = canvas.width - player.width;
 	    player.grounded = false;
+
 	    lvl.platforms.forEach(plat => {
 	        if (checkCollision(player, plat)) {
 	            if (!isBonusActive && currentLevel === 2 && plat.type === 'bonusTrigger' && hasSecretKey) { launchBonusStage(); return; }
@@ -173,7 +205,7 @@
 	    });
 	    if (!isBonusActive && currentLevel === 1 && lvl.secretKeyItem && !lvl.secretKeyItem.collected) { if (checkCollision(player, { x: lvl.secretKeyItem.x, y: lvl.secretKeyItem.y, w: lvl.secretKeyItem.w, h: lvl.secretKeyItem.h })) { lvl.secretKeyItem.collected = true; hasSecretKey = true; document.getElementById('status-display').innerText = "BONUS UNLOCKED!"; setTimeout(() => { if(!isBonusActive) document.getElementById('status-display').innerText = "2D PARKOUR"; }, 2500); } }
 	    lvl.diamonds.forEach(diamond => { if (!diamond.collected) { if (checkCollision(player, { x: diamond.x, y: diamond.y, w: 12, h: 12 })) { diamond.collected = true; diamondCount++; document.getElementById('diamonds-display').innerText = `DIAMONDS: ${diamondCount}`; } } });
-	    lvl.hazards.forEach(haz => { if (checkCollision(player, haz)) { deathCount++; document.getElementById('deaths-display').innerText = `DEATHS: ${deathCount}`; if (isBonusActive) launchBonusStage(); else initLevel(currentLevel); } });
+	    for(let i=0; i<lvl.hazards.length; i++) { if (checkCollision(player, lvl.hazards[i])) { deathCount++; document.getElementById('deaths-display').innerText = `DEATHS: ${deathCount}`; if (isBonusActive) launchBonusStage(); else initLevel(currentLevel); break; } }
 	    if (player.y > canvas.height) { deathCount++; document.getElementById('deaths-display').innerText = `DEATHS: ${deathCount}`; if (isBonusActive) launchBonusStage(); else initLevel(currentLevel); }
 	    if (checkCollision(player, { x: lvl.exit.x, y: lvl.exit.y, w: lvl.exit.width, h: lvl.exit.height })) { if (isBonusActive) { initLevel(3); } else if (currentLevel < levels.length - 1) { initLevel(currentLevel + 1); } else { gameActive = false; document.getElementById('win-screen').classList.remove('hidden'); } }
 	}
@@ -184,7 +216,10 @@
 	    lvl.hazards.forEach(haz => { ctx.fillStyle = '#ff3300'; ctx.fillRect(haz.x, haz.y, haz.w, haz.h); ctx.strokeStyle = '#ff9900'; ctx.lineWidth = 2; ctx.strokeRect(haz.x, haz.y, haz.w, haz.h); });
 	    lvl.platforms.forEach(plat => { ctx.fillStyle = plat.type === 'ice' ? '#00ffff' : plat.type === 'bonusTrigger' ? '#ff00ff' : '#0055ff'; ctx.fillRect(plat.x, plat.y, plat.w, plat.h); ctx.strokeStyle = plat.type === 'ice' ? '#ffffff' : '#00ffff'; ctx.lineWidth = 3; ctx.strokeRect(plat.x, plat.y, plat.w, plat.h); });
 	    if (!isBonusActive && currentLevel === 1 && lvl.secretKeyItem && !lvl.secretKeyItem.collected) { ctx.fillStyle = '#050515'; ctx.fillRect(lvl.secretKeyItem.x, lvl.secretKeyItem.y, lvl.secretKeyItem.w, lvl.secretKeyItem.h); }
-	    lvl.diamonds.forEach(diamond => { if (!diamond.collected) { ctx.save(); ctx.translate(diamond.x + 6, diamond.y + 6); ctx.rotate((Date.now() / 400) % (Math.PI * 2)); ctx.fillStyle = '#ffff00'; ctx.shadowColor = '#ffff00'; ctx.shadowBlur = 8; ctx.beginPath(); ctx.moveTo(0, -7); ctx.lineTo(5, 0); ctx.lineTo(0, 7); ctx.lineTo(-5, 0); ctx.closePath(); ctx.fill(); ctx.restore(); } });
+
+	    // Fast Render pass for items
+	    let timeOffset = (Date.now() / 400) % (Math.PI * 2);
+	    lvl.diamonds.forEach(diamond => { if (!diamond.collected) { ctx.save(); ctx.translate(diamond.x + 6, diamond.y + 6); ctx.rotate(timeOffset); ctx.fillStyle = '#ffff00'; ctx.beginPath(); ctx.moveTo(0,-7); ctx.lineTo(5,0); ctx.lineTo(0,7); ctx.lineTo(-5,0); ctx.closePath(); ctx.fill(); ctx.restore(); } });
 	    let pulse = Math.sin(Date.now() / 100) * 5; ctx.fillStyle = isBonusActive ? `rgba(255, 0, 255, ${0.6 + Math.sin(Date.now()/100)*0.3})` : `rgba(5, 255, 0, ${0.6 + Math.sin(Date.now()/100)*0.3})`; ctx.fillRect(lvl.exit.x - pulse/2, lvl.exit.y - pulse/2, lvl.exit.width + pulse, lvl.exit.height + pulse); ctx.strokeStyle = isBonusActive ? '#ff00ff' : '#05ff00'; ctx.lineWidth = 3; ctx.strokeRect(lvl.exit.x, lvl.exit.y, lvl.exit.width, lvl.exit.height);
 	    ctx.fillStyle = player.color; ctx.fillRect(player.x, player.y, player.width, player.height); ctx.fillStyle = '#ffff00'; if (player.vx >= 0) { ctx.fillRect(player.x + 12, player.y + 6, 4, 4); } else { ctx.fillRect(player.x + 4, player.y + 6, 4, 4); }
 	}
