@@ -4,7 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="google-site-verification" content="R8wT5qNDY8WfpenYvBGfkVboBXo4Wh_Jjgnn42o5coA" />
-	<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns=%22http://w3.org viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 fill=%22black%22/><text x=%2250%22 y=%2272%22 font-family=%22Impact, Arial Black, sans-serif%22 font-size=%2275%22 font-weight=%22900%22 fill=%22%2300ffff%22 text-anchor=%22middle%22 style=%22filter: drop-shadow(0px 0px 10px %2300ffff) drop-shadow(0px 0px 20px %2300ffff);%22>S</text></svg>">
+    
+    <!-- Neon Cyan S Favicon -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns=%22http://w3.org viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 fill=%22black%22/><text x=%2250%22 y=%2272%22 font-family=%22Impact, Arial Black, sans-serif%22 font-size=%2275%22 font-weight=%22900%22 fill=%22%2300ffff%22 text-anchor=%22middle%22 style=%22filter: drop-shadow(0px 0px 10px %2300ffff) drop-shadow(0px 0px 20px %2300ffff);%22>S</text></svg>">
+
     <title>Sharkdude's Arcade</title>
     <style>
         /* Reset and Base Styles */
@@ -79,7 +82,7 @@
         /* Custom Neon Glow Themes (No two identical colors touch in 2-column layout) */
         .neon-cyan    { border: 6px solid #00ffff; box-shadow: 0 0 15px #00ffff, inset 0 0 10px rgba(0,255,255,0.3); }
         .neon-green   { border: 6px solid #39ff14; box-shadow: 0 0 15px #39ff14, inset 0 0 10px rgba(57,255,20,0.3); }
-        .neon-gold    { border: 6px solid #ffaa00; box-shadow: 0 0 15px #ffaa00, inset 0 0 10px rgba(255,170,0,0.3); }
+        .neon-gold    { border: 6px solid #da9600; box-shadow: 0 0 15px #da9600, inset 0 0 10px rgba(218,150,0,0.3); } /* Upgraded bright gold shade */
         .neon-pink    { border: 6px solid #ff007f; box-shadow: 0 0 15px #ff007f, inset 0 0 10px rgba(255,0,127,0.3); }
         .neon-red     { border: 6px solid #ff003c; box-shadow: 0 0 15px #ff003c, inset 0 0 10px rgba(255,0,60,0.3); }
         .neon-purple  { border: 6px solid #b000ff; box-shadow: 0 0 15px #b000ff, inset 0 0 10px rgba(176,0,255,0.3); }
@@ -157,7 +160,7 @@
     <main>
         <div class="grid-container">
             
-            <!-- Active Game Lineup (9 Games Total with Alternating Colors) -->
+            <!-- Active Game Lineup (10 Games Total with Alternating Colors) -->
             <!-- Row 1 -->
             <a href="adventure/index.html" class="card neon-cyan">
                 <div class="title">Adventure - Atari 2600</div>
@@ -190,13 +193,15 @@
                 <div class="title">2D Parkour</div>
             </a>
             
-            <!-- Row 5 (Starts next color cycle) -->
+            <!-- Row 5 -->
             <a href="tetris/index.html" class="card neon-cyan">
                 <div class="title">Tetris</div>
             </a>
+            <a href="duck-shooter/index.html" class="card neon-green">
+                <div class="title">Duck Shooter</div>
+            </a>
 
-            <!-- Placeholders (Exactly 11 Static "Coming Soon" Slots to equal 20) -->
-            <div class="card coming-soon"><div class="title">Coming Soon</div></div>
+            <!-- Placeholders (Exactly 10 Static "Coming Soon" Slots to maintain 20 total) -->
             <div class="card coming-soon"><div class="title">Coming Soon</div></div>
             <div class="card coming-soon"><div class="title">Coming Soon</div></div>
             <div class="card coming-soon"><div class="title">Coming Soon</div></div>
